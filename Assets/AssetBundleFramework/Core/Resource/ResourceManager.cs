@@ -7,6 +7,9 @@ using UnityEngine;
 
 namespace AssetBundleFramework.Core.Resource
 {
+    /// <summary>
+    /// 管理具体加载
+    /// </summary>
     public class ResourceManager
     {
         /// <summary>
@@ -30,6 +33,20 @@ namespace AssetBundleFramework.Core.Resource
         /// </summary>
         internal Dictionary<string, List<string>> ResourceDependencyDic = new Dictionary<string, List<string>>();
 
+        /// <summary>
+        /// 所有资源集合(加载之后就常驻在这个字典里 缓存)
+        /// </summary>
+        private Dictionary<string, AResource> m_ResourceDic = new Dictionary<string, AResource>();
+
+        /// <summary>
+        /// 需要释放卸载的资源（到时候统一在分帧卸载）
+        /// </summary>
+        private LinkedList<AResource> m_NeedUnloadList = new LinkedList<AResource>();
+
+        /// <summary>
+        /// 异步加载集合（不定时什么时候回来）
+        /// </summary>
+        private List<AResourceAsync> m_AsyncList = new List<AResourceAsync>();
 
         /// <summary>
         /// 影响是否使用AssetDataBase进行加载(初始化时候记录)
@@ -141,6 +158,84 @@ namespace AssetBundleFramework.Core.Resource
                 }
             }
             #endregion
+        }
+    
+
+        /// <summary>
+        /// 加载资源
+        /// </summary>
+        /// <param name="url">资源url</param>
+        /// <param name="async">是否异步</param>
+        /// <param name="callback">加载完成回调</param>
+        public void LoadWithCallback(string url,bool async,Action<IResource> callback)
+        {
+            //IResource是一个接口基类之类的？
+        }
+    
+        /// <summary>
+        /// 内部加载资源（真正加载资源的）
+        /// </summary>
+        /// <param name="url">资源url</param>
+        /// <param name="async">是否异步</param>
+        /// <param name="dependency">是否依赖</param>
+        /// <returns></returns>
+        private AResource LoadInternal(string url,bool async,bool dependency)
+        {
+            AResource resource = null;
+            //取resource
+            if(m_ResourceDic.TryGetValue(url,out resource))
+            {
+                //从需要释放的列表中移除（为什么
+                if(resource.reference == 0)//引用数为0
+                {
+                    m_NeedUnloadList.Remove(resource);
+                    //没听懂
+
+                    //经典Resource管理方案··？
+                }
+                resource.AddReference();
+
+                return resource;
+            }
+
+            //没取到的话
+
+
+            if (m_Editor)
+            {
+                resource = new EditorResource();
+            }
+            else if (async)
+            {
+                ResourceAsync resourceAsync = new ResourceAsync();
+                m_AsyncList.Add(resourceAsync);
+                resource = resourceAsync;
+            }
+            else
+            {
+                resource = new Resource();
+            }
+
+            resource.url = url;
+            m_ResourceDic.Add(url, resource);
+
+            //加载依赖
+            List<string> dependencies = null;
+            ResourceDependencyDic.TryGetValue(url, out dependencies);
+            if (dependencies != null && dependencies.Count>0)
+            {
+                resource.dependencies = new AResource[dependencies.Count];
+                for(int i = 0; i < dependencies.Count; i++)
+                {
+                    string dependencyUrl = dependencies[i];
+                    AResource dependencyResource = LoadInternal(dependencyUrl, async, true);
+                    resource.dependencies[i] = dependencyResource;
+                }
+            }
+            resource.AddReference();
+            resource.Load();
+            return resource;
+
         }
     }
 }

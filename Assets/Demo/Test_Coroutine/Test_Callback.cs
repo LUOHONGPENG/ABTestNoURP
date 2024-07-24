@@ -19,7 +19,28 @@ public class Test_Callback : MonoBehaviour
         PrefixPath = Path.GetFullPath(Path.Combine(Application.dataPath, "../../AssetBundle")).Replace("\\", "/");
         PrefixPath += $"/{Platform}";
         ResourceManager.instance.Initialize(GetPlatform(), GetFileUrl, false, 0);
+
+        Initialize();
     }
+
+    /// <summary>
+    /// 初始化
+    /// </summary>
+    private void Initialize()
+    {
+        ResourceManager.instance.LoadWithCallback("Assets/AssetBundle/UI/UIRoot.prefab", false, //是否异步都行
+            uiRootResource => 
+            {
+                uiRootResource.Instantiate();
+                Transform uiParent = GameObject.Find("Canvas").transform;
+                //再加载TestUI
+                ResourceManager.instance.LoadWithCallback("Assets/AssetBundle/UI/TestUI.prefab", false, testUIResource =>
+                {
+                    testUIResource.Instantiate(uiParent, false);
+                });
+            });
+    }
+
 
     private string GetPlatform()
     {
