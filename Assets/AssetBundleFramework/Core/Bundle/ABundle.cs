@@ -1,9 +1,10 @@
 using System;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace AssetBundleFramework.Core.Bundle
 {
-    public class ABundle
+    public abstract class ABundle
     {
         /// <summary>
         /// AssetBundle
@@ -53,6 +54,14 @@ namespace AssetBundleFramework.Core.Bundle
         /// <param name="type">资源Type</param>
         /// <returns>指定名字的资源</returns>
         internal abstract Object LoadAsset(string name, Type type);
+
+        /// <summary>
+        /// 异步加载资源
+        /// </summary>
+        /// <param name="name">资源名称</param>
+        /// <param name="type">资源type</param>
+        /// <returns>AssetBundleRequest</returns>
+        internal abstract AssetBundleRequest LoadAssetAsync(string name, Type type);
     }
 
 }

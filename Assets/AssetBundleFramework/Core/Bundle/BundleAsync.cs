@@ -1,6 +1,9 @@
 
+using System;
 using System.IO;
 using UnityEngine;
+using Object = UnityEngine.Object;
+
 
 namespace AssetBundleFramework.Core.Bundle
 {
@@ -38,6 +41,99 @@ namespace AssetBundleFramework.Core.Bundle
             m_AssetBundleCreateRequest = AssetBundle.LoadFromFileAsync(file, 0, BundleManager.instance.offset);
         }
 
+        /// <summary>
+        /// 加载资源
+        /// </summary>
+        /// <param name="name">资源名称</param>
+        /// <param name="type">资源Type</param>
+        /// <returns>指定名字的资源</returns>
+        internal override Object LoadAsset(string name, System.Type type)
+        {
+            //先检查名字是否为空
+            if (string.IsNullOrEmpty(name))
+            {
+                throw new ArgumentException($"{nameof(BundleAsync)}.{nameof(LoadAsset)}() name is null.");
+            }
+
+            //assetbundle 本身如果是空的也要报错
+            if (m_AssetBundleCreateRequest == null)
+            {
+                throw new NullReferenceException($"{nameof(BundleAsync)}.{nameof(LoadAsset)}() m_AssetBundleCreateRequest is null");
+            }
+
+            if(assetBundle == null)
+            {
+                assetBundle = m_AssetBundleCreateRequest.assetBundle;
+            }
+
+            return assetBundle.LoadAsset(name, type);
+        }
+
+        /// <summary>
+        /// 异步加载资源
+        /// </summary>
+        /// <param name="name">资源名称</param>
+        /// <param name="type">资源type</param>
+        /// <returns>AssetBundleRequest 返回是一个request</returns>
+        internal override AssetBundleRequest LoadAssetAsync(string name, Type type)
+        {
+            //先检查名字是否为空
+            if (string.IsNullOrEmpty(name))
+            {
+                throw new ArgumentException($"{nameof(BundleAsync)}.{nameof(LoadAssetAsync)}() name is null.");
+            }
+
+            //assetbundle 本身如果是空的也要报错
+            if (m_AssetBundleCreateRequest == null)
+            {
+                throw new NullReferenceException($"{nameof(BundleAsync)}.{nameof(LoadAssetAsync)}() m_AssetBundleCreateRequest is null");
+            }
+
+            if (assetBundle == null)
+            {
+                assetBundle = m_AssetBundleCreateRequest.assetBundle;
+            }
+
+            return assetBundle.LoadAssetAsync(name, type);
+        }
+
+        internal override bool Update()
+        {
+            if (done)
+            {
+                return true;
+            }
+
+            //检查依赖好了吗
+            if(dependencies != null)
+            {
+                for(int i = 0; i < dependencies.Length; i++)
+                {
+                    if (!dependencies[i].done)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            //检查Request好了没
+            if (!m_AssetBundleCreateRequest.isDone)
+            {
+                return false;
+            }
+
+            done = true;
+
+            assetBundle = m_AssetBundleCreateRequest.assetBundle;
+            isStreamedSceneAssetBundle = assetBundle.isStreamedSceneAssetBundle;
+
+            if(reference == 0)
+            {
+                Unload();
+            }
+
+            return true;
+        }
 
     }
 

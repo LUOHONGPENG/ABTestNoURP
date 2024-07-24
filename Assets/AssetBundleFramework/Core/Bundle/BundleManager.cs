@@ -77,7 +77,15 @@ namespace AssetBundleFramework.Core.Bundle
             return LoadInternal(url, false);
         }
 
-
+        /// <summary>
+        /// 异步加载bundle
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        internal ABundle LoadAsync(string url)
+        {
+            return LoadInternal(url, true);
+        }
 
         /// <summary>
         /// 内部加载bundle

@@ -1,4 +1,8 @@
 
+using System;
+using UnityEngine;
+using Object = UnityEngine.Object;
+
 namespace AssetBundleFramework.Core.Resource
 {
     /// <summary>
@@ -10,6 +14,39 @@ namespace AssetBundleFramework.Core.Resource
     internal class EditorResource : AResource
     {
         public override bool keepWaiting => !done;
+
+        /// <summary>
+        /// 加载资源
+        /// </summary>
+        internal override void Load()
+        {
+            //判断url在不在
+            if(string.IsNullOrEmpty(url))
+            {
+                throw new ArgumentException($"{nameof(EditorResource)}.{nameof(url)} is null");
+            }
+            LoadAsset();
+        }
+
+        /// <summary>
+        /// 加载资源
+        /// </summary>
+        internal override void LoadAsset()
+        {
+            //如果是Editor可以直接拿到资源
+            #if UNITY_EDITOR
+                asset = UnityEditor.AssetDatabase.LoadAssetAtPath<Object>(url);
+            #endif
+
+            done = true;
+
+            if(finishedCallback != null)
+            {
+                Action<AResource> tempCallback = finishedCallback;
+                finishedCallback = null;
+                tempCallback.Invoke(this);
+            }
+        }
     }
 
 }
