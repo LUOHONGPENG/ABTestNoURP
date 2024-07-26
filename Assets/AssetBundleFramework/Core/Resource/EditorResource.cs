@@ -47,6 +47,19 @@ namespace AssetBundleFramework.Core.Resource
                 tempCallback.Invoke(this);
             }
         }
+
+        internal override async void UnLoad()
+        {
+            if(asset!=null &&!(asset is GameObject))
+            {
+                Resources.UnloadAsset(base.asset);
+                asset = null;
+            }
+            //¸³Öµ
+            asset = null;
+            //awaiter = null;
+            finishedCallback = null;
+        }
     }
 
 }

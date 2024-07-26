@@ -4,7 +4,7 @@ using Object = UnityEngine.Object;
 
 namespace AssetBundleFramework.Core.Bundle
 {
-    public abstract class ABundle
+    internal abstract class ABundle
     {
         /// <summary>
         /// AssetBundle
@@ -41,10 +41,33 @@ namespace AssetBundleFramework.Core.Bundle
         /// </summary>
         internal abstract void Load();
 
+        /// <summary>
+        /// 卸载bundle
+        /// </summary>
+        internal abstract void UnLoad();
+
+        /// <summary>
+        /// 增加引用计数
+        /// </summary>
         internal void AddReference()
         {
             //自身引用+1
             ++reference;
+        }
+
+        /// <summary>
+        /// 减少引用
+        /// </summary>
+        internal void ReduceReference()
+        {
+            //自己引用-1
+            --reference;
+
+            //减到小于0是比较离谱的
+            if (reference < 0)
+            {
+                throw new Exception($"{GetType()}.{nameof(ReduceReference)}() less than 0,{nameof(url)}:{url}.");
+            }
         }
 
         /// <summary>

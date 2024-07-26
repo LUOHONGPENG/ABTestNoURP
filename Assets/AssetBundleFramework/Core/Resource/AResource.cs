@@ -1,6 +1,7 @@
 using AssetBundleFramework.Core.Bundle;
 using System;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace AssetBundleFramework.Core.Resource
 {
@@ -101,9 +102,26 @@ namespace AssetBundleFramework.Core.Resource
         internal abstract void Load();
 
         /// <summary>
+        /// 卸载资源
+        /// </summary>
+        internal abstract void UnLoad();
+        /// <summary>
         /// 加载资源
         /// </summary>
         internal abstract void LoadAsset();
+
+        /// <summary>
+        /// 减少引用
+        /// </summary>
+        internal void ReduceReference()
+        {
+            --reference;
+
+            if (reference < 0)
+            {
+                throw new Exception($"{GetType()}.{nameof(ReduceReference)}() less than 0,{nameof(url)}:{url}.");
+            }
+        }
 
         /// <summary>
         /// 刷新异步资源（当同步资源的依赖包包含异步是，需要立刻刷新返回）

@@ -35,6 +35,48 @@ namespace AssetBundleFramework.Core.Bundle
         }
 
         /// <summary>
+        /// 卸载bundle
+        /// </summary>
+        internal override void UnLoad()
+        {
+            if (assetBundle)
+            {
+                assetBundle.Unload(true);
+            }
+
+            //设定回默认值
+            assetBundle = null;
+            done = false;
+            reference = 0;
+            isStreamedSceneAssetBundle = false;
+        }
+
+
+        /// <summary>
+        /// 异步加载资源
+        /// </summary>
+        /// <param name="name">资源名称</param>
+        /// <param name="type">资源Type</param>
+        /// <returns>AssetBundleRequest</returns>
+        internal override AssetBundleRequest LoadAssetAsync(string name, Type type)
+        {
+            //先检查名字是否为空
+            if (string.IsNullOrEmpty(name))
+            {
+                throw new ArgumentException($"{nameof(Bundle)}.{nameof(LoadAssetAsync)}() name is null.");
+            }
+
+            //assetbundle 本身如果是空的也要报错
+            if (assetBundle == null)
+            {
+                throw new NullReferenceException($"{nameof(Bundle)}.{nameof(LoadAssetAsync)}() Bundle is null");
+            }
+
+            return assetBundle.LoadAssetAsync(name, type);
+        }
+
+
+        /// <summary>
         /// 加载资源
         /// </summary>
         /// <param name="name">资源名称</param>
@@ -58,16 +100,7 @@ namespace AssetBundleFramework.Core.Bundle
             return assetBundle.LoadAsset(name, type);
         }
 
-        /// <summary>
-        /// 异步加载资源
-        /// </summary>
-        /// <param name="name">资源名称</param>
-        /// <param name="type">资源type</param>
-        /// <returns>AssetBundleRequest</returns>
-        internal override AssetBundleRequest LoadAssetAsync(string name, Type type)
-        {
-
-        }
+        
     }
 
 

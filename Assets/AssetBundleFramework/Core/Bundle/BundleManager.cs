@@ -78,6 +78,38 @@ namespace AssetBundleFramework.Core.Bundle
         }
 
         /// <summary>
+        /// 卸载bundle
+        /// </summary>
+        /// <param name="bundle">要卸载的bundle</param>
+        internal void UnLoad(ABundle bundle)
+        {
+            if(bundle == null)
+            {
+                throw new ArgumentException($"{nameof(BundleManager)}.{nameof(UnLoad)}() bundle is null");
+            }
+
+            //引用减一
+            bundle.ReduceReference();
+
+            //引用为0 直接释放
+            if(bundle.reference == 0)
+            {
+                WillUnload(bundle);
+            }
+        }
+
+        /// <summary>
+        /// 即将要释放的资源
+        /// </summary>
+        /// <param name="bundle"></param>
+        private void WillUnload(ABundle bundle)
+        {
+            //存进needunload
+            m_NeedUnloadList.AddLast(bundle);
+        }
+
+
+        /// <summary>
         /// 异步加载bundle
         /// </summary>
         /// <param name="url"></param>
@@ -158,6 +190,63 @@ namespace AssetBundleFramework.Core.Bundle
 
             //交到外部处理
             return m_GetFileCallback.Invoke(url);
+        }
+
+        public void Update()
+        {
+            for(int i = 0; i < m_AsyncList.Count;i++)
+            {
+                if (m_AsyncList[i].Update())
+                {
+                    m_AsyncList.RemoveAt(i);
+                    i--;
+                }
+            }
+        }
+
+        //在Update结束之后调用
+        public void LateUpdate()
+        {
+            if(m_NeedUnloadList.Count == 0)
+            {
+                return;
+            }
+            
+            while(m_NeedUnloadList.Count > 0)
+            {
+                ABundle bundle = m_NeedUnloadList.First.Value;//先拿到头
+                m_NeedUnloadList.RemoveFirst();
+                if(bundle == null)
+                {
+                    continue;
+                }
+
+                m_BundleDic.Remove(bundle.url);
+
+                
+                if(!bundle.done && bundle is BundleAsync)
+                {
+                    BundleAsync bundleAsync = bundle as BundleAsync;
+                    //异步的列表里在 就移除掉
+                    if (m_AsyncList.Contains(bundleAsync))
+                    {
+                        m_AsyncList.Remove(bundleAsync);
+                    }
+                }
+
+                bundle.UnLoad();
+
+                //处理依赖引用-1
+                if(bundle.dependencies != null)
+                {
+                    for(int i = 0; i < bundle.dependencies.Length; i++)
+                    {
+                        //取得依赖
+                        ABundle temp = bundle.dependencies[i];
+                        UnLoad(temp);
+                    }
+                }
+            }
         }
     }
 

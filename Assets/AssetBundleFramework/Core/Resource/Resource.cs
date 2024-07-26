@@ -1,6 +1,8 @@
 
 using AssetBundleFramework.Core.Bundle;
 using System;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace AssetBundleFramework.Core.Resource
 {
@@ -33,6 +35,29 @@ namespace AssetBundleFramework.Core.Resource
             bundle = BundleManager.instance.Load(bundleUrl);
             LoadAsset();
         }
+
+        /// <summary>
+        /// 卸载资源
+        /// </summary>
+        internal override void UnLoad()
+        {
+            if(bundle == null)
+            {
+                throw new Exception($"{nameof(Resource)}.{nameof(UnLoad)}(){nameof(bundle)} is null.");
+            }
+
+            if(asset != null &&!(asset is GameObject))
+            {
+                Resources.UnloadAsset(asset);
+                asset = null;
+            }
+
+            BundleManager.instance.UnLoad(bundle);
+
+            bundle = null;
+            finishedCallback = null;
+        }
+
 
         /// <summary>
         /// 加载资源

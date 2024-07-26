@@ -41,6 +41,10 @@ public class Test_Callback : MonoBehaviour
             });
     }
 
+    private void Update()
+    {
+        ResourceManager.instance.Update();
+    }
 
     private string GetPlatform()
     {

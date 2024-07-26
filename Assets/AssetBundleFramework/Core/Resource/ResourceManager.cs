@@ -170,6 +170,15 @@ namespace AssetBundleFramework.Core.Resource
         public void LoadWithCallback(string url,bool async,Action<IResource> callback)
         {
             //IResource是一个接口基类之类的？
+            AResource resource = LoadInternal(url, async, false);
+            if (resource.done)
+            {
+                callback?.Invoke(resource);
+            }
+            else
+            {
+                resource.finishedCallback += callback;
+            }
         }
     
         /// <summary>
@@ -236,6 +245,85 @@ namespace AssetBundleFramework.Core.Resource
             resource.Load();
             return resource;
 
+        }
+
+        /// <summary>
+        /// 卸载资源
+        /// </summary>
+        /// <param name="resource"></param>
+        public void UnLoad(IResource resource)
+        {
+            if(resource == null)
+            {
+                throw new ArgumentNullException($"{nameof(ResourceManager)}.{nameof(UnLoad)}() {nameof(resource)} is null.");
+            }
+
+            AResource aResource = resource as AResource;
+            aResource.ReduceReference();
+
+            if(aResource.reference == 0)
+            {
+                WillUnload(aResource);
+            }
+        }
+
+        /// <summary>
+        /// 即将要释放的资源
+        /// </summary>
+        /// <param name="resource"></param>
+        private void WillUnload(AResource resource)
+        {
+            m_NeedUnloadList.AddLast(resource);
+        }
+
+
+        public void Update()
+        {
+            BundleManager.instance.Update();
+
+            for(int i = 0; i < m_AsyncList.Count; i++)
+            {
+                AResourceAsync resourceAsync = m_AsyncList[i];
+                if (resourceAsync.Update())
+                {
+                    m_AsyncList.RemoveAt(i);
+                    i--;
+                }
+            }
+        }
+
+        public void LateUpdate()
+        {
+            if(m_NeedUnloadList.Count != 0)
+            {
+                //疯狂取
+                while(m_NeedUnloadList.Count > 0)
+                {
+                    AResource resource = m_NeedUnloadList.First.Value;
+                    m_NeedUnloadList.RemoveFirst();
+                    //如果是脏数据就continue
+                    if(resource == null)
+                    {
+                        continue;
+                    }
+
+                    m_ResourceDic.Remove(resource.url);
+
+                    resource.UnLoad();
+
+                    //依赖引用-1
+                    if(resource.dependencies != null)
+                    {
+                        for(int i = 0; i < resource.dependencies.Length; i++)
+                        {
+                            AResource temp = resource.dependencies[i];
+                            UnLoad(temp);
+                        }
+                    }
+                }
+            }
+
+            BundleManager.instance.LateUpdate();
         }
     }
 }
